@@ -5,13 +5,13 @@ generated using Kedro 0.18.0
 
 from functools import reduce
 from operator import add
-from itertools import product
 
-from kedro.pipeline import Pipeline, node
 from kedro.framework.session.session import _active_session
+from kedro.pipeline import Pipeline, node
 from kedro.pipeline.modular_pipeline import pipeline
 
-from .nodes import fit_model, build_dataset, model_selection
+from .nodes import build_dataset, fit_model, model_selection
+
 
 def _training_template(name):
     return Pipeline(
@@ -27,10 +27,12 @@ def _training_template(name):
                     "n_jobs": "params:n_jobs",
                 },
                 outputs="model_result",
-                name=f"fit_{name}"
+                name=f"fit_{name}",
             )
         ]
     )
+
+
 def _dataset_template(name):
     return Pipeline(
         [
@@ -41,13 +43,15 @@ def _dataset_template(name):
                     "user_column": "params:user_column",
                     "item_column": "params:item_column",
                     "rating_column": "params:rating_column",
-                    "rating_scale": "params:rating_scale"
+                    "rating_scale": "params:rating_scale",
                 },
                 outputs="dataset",
-                name=f"dataset_{name}"
+                name=f"dataset_{name}",
             )
         ]
     )
+
+
 def create_pipeline(**kwargs) -> Pipeline:
     session = _active_session.load_context()
     models = session.catalog.load("params:models")
@@ -58,9 +62,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             pipe=_dataset_template(ref),
             inputs={"data": f"{ref}_data"},
             parameters={},
-            outputs={
-                "dataset": f"{ref}_dataset"
-            },
+            outputs={"dataset": f"{ref}_dataset"},
         )
         for ref in refs
     ]
@@ -70,9 +72,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         pipeline(
             pipe=_training_template(model),
             parameters={"params:model_dict": f"params:models.{model}"},
-            outputs={
-                "model_result": f"{model}_result"
-            },
+            outputs={"model_result": f"{model}_result"},
         )
         for model in models
     ]
@@ -84,7 +84,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 func=model_selection,
                 inputs=["train_dataset"] + [f"{model}_result" for model in models],
                 outputs="model",
-                name="model_selection"
+                name="model_selection",
             )
         ]
     )

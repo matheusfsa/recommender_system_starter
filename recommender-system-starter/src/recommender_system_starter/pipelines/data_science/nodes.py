@@ -2,15 +2,14 @@
 This is a boilerplate pipeline 'data_science'
 generated using Kedro 0.18.0
 """
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import pandas as pd
-from surprise import AlgoBase
+from surprise import AlgoBase, Dataset, Reader
+from surprise.dataset import DatasetAutoFolds
 
 from recommender_system_starter.utils import import_class
-from surprise import Reader
-from surprise import Dataset
-from surprise.dataset import DatasetAutoFolds
+
 
 def build_dataset(
     data: pd.DataFrame,
@@ -21,8 +20,11 @@ def build_dataset(
 ) -> Dataset:
     """This node build a dataset."""
     reader = Reader(rating_scale=(rating_scale["min"], rating_scale["max"]))
-    dataset = Dataset.load_from_df(data[[user_column, item_column, rating_column]], reader)
+    dataset = Dataset.load_from_df(
+        data[[user_column, item_column, rating_column]], reader
+    )
     return dataset
+
 
 def fit_model(
     train_dataset: Dataset,
@@ -36,7 +38,9 @@ def fit_model(
     model_class = import_class(model_dict["model_class"])
     cv = import_class(fold["class"])(**fold["kwargs"])
 
-    search = _build_search(model_dict["params_search"], model_class, cv, metric, verbose, n_jobs)
+    search = _build_search(
+        model_dict["params_search"], model_class, cv, metric, verbose, n_jobs
+    )
     search.fit(train_dataset)
     return {"model": search.best_estimator[metric], "metric": search.best_score[metric]}
 
@@ -54,11 +58,16 @@ def _build_search(
     for p_name, p_value in search_dict["params"].items():
         params[p_name] = p_value
     search = search_class(
-        model_class, params, cv=cv, measures=[metric],
-        n_jobs=n_jobs, joblib_verbose=verbose,
-        **search_dict["kwargs"]
+        model_class,
+        params,
+        cv=cv,
+        measures=[metric],
+        n_jobs=n_jobs,
+        joblib_verbose=verbose,
+        **search_dict["kwargs"],
     )
     return search
+
 
 def model_selection(
     train_dataset: Dataset,

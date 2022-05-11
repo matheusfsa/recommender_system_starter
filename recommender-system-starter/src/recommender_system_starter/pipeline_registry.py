@@ -3,8 +3,9 @@ from typing import Dict
 
 from kedro.pipeline import Pipeline
 
-from recommender_system_starter.pipelines import preprocessing as pp
 from recommender_system_starter.pipelines import data_science as ds
+from recommender_system_starter.pipelines import preprocessing as pp
+
 
 def register_pipelines() -> Dict[str, Pipeline]:
     """Register the project's pipelines.
