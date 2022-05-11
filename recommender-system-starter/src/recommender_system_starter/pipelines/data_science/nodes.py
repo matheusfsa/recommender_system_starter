@@ -2,7 +2,7 @@
 This is a boilerplate pipeline 'data_science'
 generated using Kedro 0.18.0
 """
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pandas as pd
 from surprise import AlgoBase
@@ -10,30 +10,34 @@ from surprise import AlgoBase
 from recommender_system_starter.utils import import_class
 from surprise import Reader
 from surprise import Dataset
+from surprise.dataset import DatasetAutoFolds
+
+def build_dataset(
+    data: pd.DataFrame,
+    rating_scale: Dict[str, int],
+    user_column: str,
+    item_column: str,
+    rating_column: str,
+) -> Dataset:
+    """This node build a dataset."""
+    reader = Reader(rating_scale=(rating_scale["min"], rating_scale["max"]))
+    dataset = Dataset.load_from_df(data[[user_column, item_column, rating_column]], reader)
+    return dataset
 
 def fit_model(
-    train_data: pd.DataFrame,
+    train_dataset: Dataset,
     model_dict: Dict[str, Any],
     fold: Dict[str, Any],
     metric: str,
     verbose: int,
     n_jobs: int,
-    rating_scale: Dict[str, int],
-    user_column: str,
-    item_column: str,
-    rating_column: str
 ) -> pd.DataFrame:
     """This node fit a model"""
-
-
-    reader = Reader(rating_scale=(rating_scale["min"], rating_scale["max"]))
-    train_data = Dataset.load_from_df(train_data[[user_column, item_column, rating_column]], reader)
-
     model_class = import_class(model_dict["model_class"])
     cv = import_class(fold["class"])(**fold["kwargs"])
 
     search = _build_search(model_dict["params_search"], model_class, cv, metric, verbose, n_jobs)
-    search.fit(train_data)
+    search.fit(train_dataset)
     return {"model": search.best_estimator[metric], "metric": search.best_score[metric]}
 
 
@@ -55,3 +59,16 @@ def _build_search(
         **search_dict["kwargs"]
     )
     return search
+
+def model_selection(
+    train_dataset: Dataset,
+    *models_results,
+):
+    """This node select the best model"""
+    models_results = list(models_results)
+    models_results.sort(key=lambda result: result["metric"])
+    model = models_results[0]["model"]
+    if isinstance(train_dataset, DatasetAutoFolds):
+        train_dataset = train_dataset.build_full_trainset()
+    model.fit(train_dataset)
+    return model

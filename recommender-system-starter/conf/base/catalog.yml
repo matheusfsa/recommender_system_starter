@@ -13,8 +13,17 @@ preprocessed_data:
 
 train_data:
   type: pandas.ParquetDataSet
-  filepath: data/05_model_input/train_data.parquet
+  filepath: data/03_primary/train_data.parquet
 
 test_data:
   type: pandas.ParquetDataSet
-  filepath: data/05_model_input/test_data.parquet
+  filepath: data/03_primary/test_data.parquet
+
+train_dataset:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/train_dataset.pickle
+
+test_dataset:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/test_dataset.pickle
+
