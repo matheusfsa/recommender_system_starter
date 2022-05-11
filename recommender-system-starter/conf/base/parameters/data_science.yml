@@ -3,3 +3,40 @@
 #
 # Documentation for this file format can be found in "Parameters"
 # Link: https://kedro.readthedocs.io/en/0.18.0/kedro_project_setup/configuration.html#parameters
+fold:
+  class: surprise.model_selection.KFold
+  kwargs:
+    n_splits: 3
+
+metric: rmse
+n_jobs: 4
+verbose: 2
+
+models:
+    baseline:
+      model_class: surprise.BaselineOnly
+      default_args: null
+      params_search:
+          class: surprise.model_selection.RandomizedSearchCV
+          kwargs:
+            n_iter: 3
+          params:
+            bsl_options:
+              n_epochs: [10]
+              reg_u: [0.01, 1., 1.5, 10, 15]
+              reg_i: [0.01, 1., 1.5, 10, 15]
+    svd:
+      model_class: surprise.SVD
+      default_args: null
+      params_search:
+          class: surprise.model_selection.RandomizedSearchCV
+          kwargs:
+            n_iter: 3
+          params:
+              reg_all: [0.01, 1., 1.5, 10]
+              n_epochs: [10]
+              lr_all: [0.0001, 0.001, 0.0015, 0.01, 15]
+              reg_bu: [0.01, 1., 1.5, 10, 15]
+              reg_bi: [0.01, 1., 1.5, 10, 15]
+              reg_pu: [0.01, 1., 1.5, 10, 15]
+              reg_qi: [0.01, 1., 1.5, 10, 15]
