@@ -1,0 +1,3 @@
+user_column: userId
+item_column: movieId
+rating_column: rating
