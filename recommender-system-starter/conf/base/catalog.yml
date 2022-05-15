@@ -3,7 +3,7 @@
 # Documentation for this file format can be found in "The Data Catalog"
 # Link: https://kedro.readthedocs.io/en/stable/data/data_catalog.html
 
-master_table:
+master_data:
   type: pandas.CSVDataSet
   filepath: data/01_raw/ratings_small.csv
 
@@ -27,3 +27,6 @@ test_dataset:
   type: pickle.PickleDataSet
   filepath: data/05_model_input/test_dataset.pickle
 
+model_metrics:
+    type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+    prefix: rs_model

@@ -2,11 +2,13 @@
 This is a boilerplate pipeline 'data_science'
 generated using Kedro 0.18.0
 """
-from typing import Any, Dict
+
+from typing import Any, Dict, List, Union
 
 import pandas as pd
-from surprise import AlgoBase, Dataset, Reader
+from surprise import AlgoBase, Dataset, Reader, accuracy
 from surprise.dataset import DatasetAutoFolds
+from surprise.model_selection import cross_validate
 
 from recommender_system_starter.utils import import_class
 
@@ -26,7 +28,7 @@ def build_dataset(
     return dataset
 
 
-def fit_model(
+def search_best_model(
     train_dataset: Dataset,
     model_dict: Dict[str, Any],
     fold: Dict[str, Any],
@@ -80,4 +82,34 @@ def model_selection(
     if isinstance(train_dataset, DatasetAutoFolds):
         train_dataset = train_dataset.build_full_trainset()
     model.fit(train_dataset)
+    return model
+
+
+def evaluate_model(
+    model: AlgoBase,
+    test_dataset: Dataset,
+    metric: str,
+) -> Dict[str, Union[float, List[float]]]:
+    if isinstance(test_dataset, DatasetAutoFolds):
+        test_dataset = test_dataset.build_full_trainset().build_testset()
+    predictions = model.test(test_dataset)
+    if metric == "rmse":
+        metric_value = accuracy.rmse(predictions)
+    elif metric == "mse":
+        metric_value = accuracy.mse(predictions)
+    elif metric == "mae":
+        metric_value = accuracy.mae(predictions)
+    else:
+        ValueError("Invalid metric name")
+    return {
+        metric : {"value": metric_value, "step": 1},
+    }
+
+def fit_model(
+    dataset: Dataset,
+    model: AlgoBase
+):
+    if isinstance(dataset, DatasetAutoFolds):
+        dataset = dataset.build_full_trainset()
+    model.fit(dataset)
     return model

@@ -10,14 +10,16 @@ from kedro.framework.session.session import _active_session
 from kedro.pipeline import Pipeline, node
 from kedro.pipeline.modular_pipeline import pipeline
 
-from .nodes import build_dataset, fit_model, model_selection
+from .nodes import (build_dataset, evaluate_model,
+                    search_best_model, model_selection,
+                    fit_model)
 
 
 def _training_template(name):
     return Pipeline(
         [
             node(
-                func=fit_model,
+                func=search_best_model,
                 inputs={
                     "train_dataset": "train_dataset",
                     "model_dict": "params:model_dict",
@@ -27,7 +29,7 @@ def _training_template(name):
                     "n_jobs": "params:n_jobs",
                 },
                 outputs="model_result",
-                name=f"fit_{name}",
+                name=f"search_best_{name}",
             )
         ]
     )
@@ -55,7 +57,7 @@ def _dataset_template(name):
 def create_pipeline(**kwargs) -> Pipeline:
     session = _active_session.load_context()
     models = session.catalog.load("params:models")
-    refs = ["train", "test"]
+    refs = ["preprocessed", "train", "test"]
 
     dataset_pipelines = [
         pipeline(
@@ -83,9 +85,28 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=model_selection,
                 inputs=["train_dataset"] + [f"{model}_result" for model in models],
-                outputs="model",
+                outputs="selected_model",
                 name="model_selection",
-            )
+            ),
+            node(
+                func=evaluate_model,
+                inputs={
+                    "model": "selected_model",
+                    "metric": "params:metric",
+                    "test_dataset": "test_dataset",
+                },
+                outputs="model_metrics",
+                name="model_evaluation",
+            ),
+            node(
+                func=fit_model,
+                inputs={
+                    "model": "selected_model",
+                    "dataset": "preprocessed_dataset",
+                },
+                outputs="model",
+                name="fit_model",
+            ),
         ]
     )
     return dataset_pipeline + training_pipeline + model_selection_pipeline

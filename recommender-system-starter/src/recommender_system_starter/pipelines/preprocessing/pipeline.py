@@ -14,7 +14,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=preprocess,
                 inputs={
-                    "data": "master_table",
+                    "data": "master_data",
                     "user_column": "params:user_column",
                     "item_column": "params:item_column",
                     "rating_column": "params:rating_column",
